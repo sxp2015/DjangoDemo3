@@ -7,6 +7,7 @@ class WechatUserProfile(AbstractUser):
     openid = models.CharField(max_length=255, unique=True, verbose_name='openid')
     nickname = models.CharField(max_length=255, verbose_name='昵称')
     avatar = models.URLField(verbose_name='头像')
+    cellphone = models.CharField(max_length=11, default='', verbose_name='手机号码')
     city = models.CharField(max_length=255, default='', verbose_name='城市')
     gender = models.CharField(max_length=255, default='', verbose_name='性别')
     province = models.CharField(max_length=255, default='', verbose_name='省份')

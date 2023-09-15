@@ -12,7 +12,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-og7w^tr#0f9wb%!3@3z7f=dujl8_%5qr^0ix=*_5meqns)9n!t'
 
-
 # 小程序配置信息
 APP_ID = 'wx45c6c038a890b402'
 APP_SECRET = 'ee4fc7f2d6130170caeb8fa73559e6ad'
@@ -250,22 +249,31 @@ SIMPLEUI_CONFIG = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        # 'rest_framework.permissions.IsAdminUser',
-        # 'rest_framework.permissions.AllowAny',
         # JWT认证，在前面的认证方案优先
         'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.permissions.IsAdminUser',
+        # 'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+        # 'rest_framework.permissions.DjangoModelPermissions',
+        # 'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'rest_framework_simplejwt.authentication.SessionAuthentication',
+        # 'rest_framework_simplejwt.authentication.TokenAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
 }
 
 # 在 setting 配置认证插件的参数
-SIMPLE_JWT = JWT_SETTINGS
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=7),  # 配置过期时间
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=15),
+}
 
 CACHES = {
     "default": {
