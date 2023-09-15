@@ -39,14 +39,11 @@ class WechatUserLoginViews(APIView):
         code = data.get('code')
         nickname = data.get('nickName', '')
         avatar = data.get('avatarUrl', '')
-
-        print('avatar:', avatar)
+        # 构造向微信发送请求的url
+        url = f"{settings.JSCODE2SESSION_URL}?appid={settings.APP_ID}&secret={settings.APP_SECRET}&js_code={code}&grant_type=authorization_code"
 
         if not code:
             return Response({'error': 'Missing code parameter'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 构造向微信发送请求的url
-        url = f"{settings.JSCODE2SESSION_URL}?appid={settings.APP_ID}&secret={settings.APP_SECRET}&js_code={code}&grant_type=authorization_code"
 
         try:
             # 向微信服务器发起 get 请求
@@ -62,7 +59,8 @@ class WechatUserLoginViews(APIView):
                 return Response({'error': 'Failed to obtain openid'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 print('openid:', openid)
-            # 查询或创建微信用户
+
+            # 更新或创建微信用户
             defaults = {'username': openid, 'password': openid}
             if nickname:
                 defaults['nickname'] = nickname
