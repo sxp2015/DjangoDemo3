@@ -4,7 +4,13 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 
-class WechatUserSerializer(serializers.Serializer):
+class WechatUserProfileListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WechatUserProfile
+        fields = '__all__'
+
+
+class WechatUserProfileUpdateOrCreateSerializer(serializers.Serializer):
     openid = serializers.CharField(max_length=50, required=True)
     nickname = serializers.CharField(max_length=100, required=False)
     avatar = serializers.CharField(max_length=255, required=False)
@@ -23,7 +29,6 @@ class WechatUserSerializer(serializers.Serializer):
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-
     openid = serializers.CharField(max_length=50, required=True)
 
     def update(self, instance, validated_data):

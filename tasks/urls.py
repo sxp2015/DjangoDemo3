@@ -2,9 +2,6 @@ from django.urls import path, include
 from rest_framework import routers
 from tasks import views
 
-#
-from tasks.views import dashboard
-
 # router = routers.DefaultRouter()
 # router.register(r'dashboard', dashboard, basename='dashboard')
 

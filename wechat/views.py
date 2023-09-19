@@ -6,39 +6,50 @@ import time
 import uuid
 import requests
 from urllib.parse import urljoin
-from django.contrib.auth import get_user_model
+
+from django.http import HttpResponse
 from django.shortcuts import render
+from django.template import loader
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from PIL import Image
-from rest_framework.decorators import api_view
 from DjangoDemo3 import settings
 from .models import WechatUserProfile
 from rest_framework.views import APIView
 from django.core.files.storage import FileSystemStorage, default_storage
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken, Token
-from .serializers import WechatUserSerializer, MyTokenObtainPairSerializer
+from .serializers import WechatUserProfileListSerializer, WechatUserProfileUpdateOrCreateSerializer, \
+    MyTokenObtainPairSerializer
+
+# 定义默认头像
+DEFAULT_AVATAR = "https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0"
+# 定义默认昵称
+DEFAULT_NICKNAME = "微信用户"
 
 
 # 处理小程序用户登陆的View
 class WechatUserLoginViews(APIView):
-    # authentication_classes = []
-    # authentication_classes = [SessionAuthentication]
+    """ 处理小程序登陆并存储用户信息"""
+
+    # 权限控制
     permission_classes = []
-    """ 获取openid存储用户信息"""
+
+    @staticmethod
+    def request_wechat_server(code):
+        url = f"{settings.JSCODE2SESSION_URL}?appid={settings.APP_ID}&secret={settings.APP_SECRET}&js_code={code}&grant_type=authorization_code"
+        response = requests.get(url)
+        response.raise_for_status()  # 检查请求是否成功
+        return response.json()
 
     # 微信登陆认证
     def post(self, request):
         # 获取到前端回传过来的code
-        data = json.loads(request.body)
         # code 有效期5分钟
-        code = data.get('code')
-        nickname = data.get('nickName', '')
-        avatar = data.get('avatarUrl', '')
+        code = request.data.get('code')
+        nickname = request.data.get('nickname', '')
+        avatar = request.data.get('avatar', '')
         # 构造向微信发送请求的url
         url = f"{settings.JSCODE2SESSION_URL}?appid={settings.APP_ID}&secret={settings.APP_SECRET}&js_code={code}&grant_type=authorization_code"
 
@@ -46,9 +57,8 @@ class WechatUserLoginViews(APIView):
             return Response({'error': 'Missing code parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # 向微信服务器发起 get 请求
-            response = requests.get(url)
-            response_data = response.json()
+            # 调用类方法，向微信服务器发起 get 请求
+            response_data = self.request_wechat_server(code)
             # 这里就是拿到的 openid 和 session_key
             openid = response_data.get('openid')
             # print('openid:', openid)
@@ -57,15 +67,10 @@ class WechatUserLoginViews(APIView):
             # 如果没有openID返回提示给前端
             if not openid:
                 return Response({'error': 'Failed to obtain openid'}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                print('openid:', openid)
 
-            # 更新或创建微信用户
-            defaults = {'username': openid, 'password': openid}
-            if nickname:
-                defaults['nickname'] = nickname
-            if avatar:
-                defaults['avatar'] = avatar
+            # 整理保存用户的数据
+            defaults = {'username': openid, 'password': openid, 'nickname': nickname if nickname else DEFAULT_NICKNAME,
+                        'avatar': avatar if avatar else DEFAULT_AVATAR}
 
             # 通过openid更新或创建用户
             wechat_user, created = WechatUserProfile.objects.update_or_create(
@@ -75,13 +80,16 @@ class WechatUserLoginViews(APIView):
             # 生成token
             token = str(RefreshToken.for_user(wechat_user).access_token)
 
-            # 返回用户信息
-            serializer = WechatUserSerializer(data={
-                'nickname': wechat_user.nickname if wechat_user.nickname else '微信用户',
-                'avatar': wechat_user.avatar if wechat_user.avatar else None,
-                'openid': wechat_user.openid if wechat_user.openid else None,
-                'token': token if token else None
-            })
+            # 序列化返回给用户的数据
+            serializer_data = {
+                'nickname': wechat_user.nickname or DEFAULT_NICKNAME,
+                'avatar': wechat_user.avatar or DEFAULT_AVATAR,
+                'openid': wechat_user.openid,
+                'token': token
+            }
+
+            # 数据校验并返回用户信息
+            serializer = WechatUserProfileUpdateOrCreateSerializer(data=serializer_data)
             serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -98,7 +106,9 @@ class WechatUserLoginViews(APIView):
         if not wechat_user:
             return Response({'error': 'WeChat user not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = WechatUserSerializer(data={
+        serializer = WechatUserProfileUpdateOrCreateSerializer(data={
+            'openid': wechat_user.openid,
+            'token': wechat_user.token,
             'nickname': wechat_user.nickname,
             'avatar': wechat_user.avatar
         })
@@ -111,8 +121,6 @@ class WechatUserUploadViews(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-
-        # 判断上传图片的用户是否携带token 或者，是已经完成认证的用户
 
         avatar_file = request.FILES.get('avatar_file')
 
@@ -147,3 +155,15 @@ class WechatUserUploadViews(APIView):
 
 class MyObtainTokenPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+
+# 返回所有微信用户的列表View
+def wechat_user_list_view(request):
+    queryset = WechatUserProfile.objects.all()
+    template = loader.get_template('wechat/wechat_user_list.html')
+    context = {
+        'user_list': queryset,
+    }
+    rendered_html = template.render(context, request)
+    return HttpResponse(rendered_html)
+

@@ -22,31 +22,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# 修改LOGO
-# SIMPLEUI_LOGO = 'http://p1.lw05.cn/static/index/images/logo.png'
-SIMPLEUI_LOGO = 'http://localhost:8000/static/admin/img/logo.png'
-
-# 修改关闭SimpleUI的右侧广告链接
-SIMPLEUI_HOME_INFO = False
-SIMPLEUI_ANALYSIS = False
-# 指定simpleui默认的主题,指定一个文件名，相对路径就从simpleui的theme目录读取
-SIMPLEUI_DEFAULT_THEME = 'x-green.css'
-
-# 修改左侧菜单首页设置
-SIMPLEUI_HOME_PAGE = '/tasks/dashboard'  # 指向的页面
-SIMPLEUI_HOME_TITLE = '首页'
-SIMPLEUI_HOME_ICON = 'fas fa-tachometer-alt'
-# SIMPLEUI_HOME_ICON = 'fa fa-home'
-
-# 隐藏首页的快捷操作和最近动作
-# SIMPLEUI_HOME_QUICK = False
-# SIMPLEUI_HOME_ACTION = False
-
-
-# 开启默认图标，默认为True
-# SIMPLEUI_DEFAULT_ICON = False
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -154,7 +129,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 # 指定静态文件的根路径
-# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/defaults/')
+
 STATIC_URL = 'static/'
 # 添加静态文件路径
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'), ]
@@ -167,12 +143,37 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# 修改LOGO
+# SIMPLEUI_LOGO = 'http://p1.lw05.cn/static/index/images/logo.png'
+SIMPLEUI_LOGO = 'http://localhost:8000/static/admin/img/logo.png'
+
+# 修改关闭SimpleUI的右侧广告链接
+SIMPLEUI_HOME_INFO = False
+SIMPLEUI_ANALYSIS = False
+# 指定simpleui默认的主题,指定一个文件名，相对路径就从simpleui的theme目录读取
+SIMPLEUI_DEFAULT_THEME = 'x-green.css'
+
+# 修改左侧菜单首页设置
+SIMPLEUI_HOME_PAGE = '/tasks/dashboard/'  # 指向的页面
+SIMPLEUI_HOME_TITLE = '首页'
+SIMPLEUI_HOME_ICON = 'fas fa-tachometer-alt'
+# SIMPLEUI_HOME_ICON = 'fa fa-home'
+
+# 隐藏首页的快捷操作和最近动作
+# SIMPLEUI_HOME_QUICK = False
+# SIMPLEUI_HOME_ACTION = False
+
+
+# 开启默认图标，默认为True
+# SIMPLEUI_DEFAULT_ICON = False
+
+
 SIMPLEUI_CONFIG = {
     # 是否使用系统默认菜单。
     'system_keep': False,
 
     # 用于菜单排序和过滤, 不填此字段为默认排序和全部显示。 空列表[] 为全部不显示.
-    'menu_display': ['任务管理', '微信管理', '权限认证', '多级菜单测试'],
+    'menu_display': ['任务管理', '微信管理', '系统管理', '权限认证', '多级菜单测试'],
 
     # 设置是否开启动态菜单, 默认为False. 如果开启, 则会在每次用户登陆时刷新展示菜单内容。
     # 一般建议关闭。
@@ -201,10 +202,11 @@ SIMPLEUI_CONFIG = {
             'models': [
                 {
                     'name': '任务列表',
-                    # 注意url按'/admin/应用名小写/模型名小写/'命名。
+                    # 注意url按'/admin（固定字段）/应用名小写/数据模型名小写/[注意要与路由名相同]'。
                     'url': '/admin/tasks/task/',
                     'icon': 'fa fa-tasks'
-                },
+                }
+
             ]
         },
         {
@@ -213,8 +215,8 @@ SIMPLEUI_CONFIG = {
             'models': [
                 {
                     'name': '用户列表',
-                    # 注意url按'/admin/应用名小写/模型名小写/'命名。
-                    'url': '/admin/wechat/wechatuser/',
+                    # 注意url按'/admin（固定字段）/应用名小写/数据模型名小写/[注意要与路由名相同]'。
+                    'url': '/wechat/wechatuserprofile/',
                     'icon': 'fa fa-tasks'
                 },
             ]
